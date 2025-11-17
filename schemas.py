@@ -1,48 +1,38 @@
 """
-Database Schemas
+Database Schemas for Cameroon Bus Booking
 
-Define your MongoDB collection schemas here using Pydantic models.
-These schemas are used for data validation in your application.
-
-Each Pydantic model represents a collection in your database.
-Model name is converted to lowercase for the collection name:
-- User -> "user" collection
-- Product -> "product" collection
-- BlogPost -> "blogs" collection
+Each Pydantic model represents a collection in MongoDB.
+Collection name is the lowercase of the class name.
 """
 
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import List, Optional
+from datetime import datetime
 
-# Example schemas (replace with your own):
+class Busroute(BaseModel):
+    depart: str = Field(..., description="Ville de départ")
+    arrivee: str = Field(..., description="Ville d'arrivée")
+    prix: int = Field(..., ge=0, description="Prix par place en FCFA")
+    actif: bool = Field(True, description="Route active")
 
-class User(BaseModel):
-    """
-    Users collection schema
-    Collection name: "user" (lowercase of class name)
-    """
-    name: str = Field(..., description="Full name")
-    email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
-    age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
-    is_active: bool = Field(True, description="Whether user is active")
+class Trip(BaseModel):
+    route_id: str = Field(..., description="ID de la route associée")
+    depart: str = Field(..., description="Ville de départ")
+    arrivee: str = Field(..., description="Ville d'arrivée")
+    date_voyage: str = Field(..., description="Date du voyage au format YYYY-MM-DD")
+    prix: int = Field(..., ge=0, description="Prix par place en FCFA")
+    capacite: int = Field(68, description="Nombre total de places")
+    booked_seats: List[int] = Field(default_factory=list, description="Sièges réservés (payés)")
+    locked_seats: List[dict] = Field(default_factory=list, description="Sièges verrouillés temporairement: {seat:int, expires:datetime}")
 
-class Product(BaseModel):
-    """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
-    """
-    title: str = Field(..., description="Product title")
-    description: Optional[str] = Field(None, description="Product description")
-    price: float = Field(..., ge=0, description="Price in dollars")
-    category: str = Field(..., description="Product category")
-    in_stock: bool = Field(True, description="Whether product is in stock")
-
-# Add your own schemas here:
-# --------------------------------------------------
-
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+class Reservation(BaseModel):
+    trip_id: str = Field(..., description="ID du trajet")
+    seats: List[int] = Field(..., description="Sièges réservés")
+    montant_total: int = Field(..., ge=0, description="Montant total en FCFA")
+    statut: str = Field("pending", description="pending, paid, cancelled, expired")
+    nom_complet: str = Field(..., description="Nom complet du voyageur")
+    telephone: str = Field(..., description="Numéro WhatsApp")
+    email: Optional[str] = Field(None, description="Email")
+    paypal_order_id: Optional[str] = Field(None, description="Order ID PayPal")
+    ticket_no: Optional[str] = Field(None, description="Numéro de réservation")
+    paid_at: Optional[datetime] = Field(None, description="Date de paiement")
